@@ -13,15 +13,12 @@ function Session (options) {
 	this.status = new Rx.BehaviorSubject('NEW');
 	var RTCPeerConnection = window.webkitRTCPeerConnection || cordova.plugins.iosrtc.RTCPeerConnection;
 	this.peerConnection = new RTCPeerConnection(options.peerConnection);
-	this.remoteStream = Rx.Observable.fromEvent(this.peerConnection, 'addstream');
+	this.remoteStream = Rx.Observable.fromEvent(this.peerConnection, 'addstream').pluck('stream');
 	this.localStream = new Rx.BehaviorSubject();
 	this.messages = rxwebrtc.input.filter(message => {
-		return message.id === this.id;
+		return message.session === this.id;
 	});
-	var remoteStreamSubscription = this.remoteStream.subscribe( stream => {
-		this.status.onNext('REMOTE_STREAM');
-	});
-	this.subscriptions = [this.status, this.localStream, remoteStreamSubscription];
+	this.subscriptions = [this.status, this.localStream];
 };
 
 Session.prototype.dispose = function() {

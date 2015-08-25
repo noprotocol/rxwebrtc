@@ -1,13 +1,12 @@
-angular.module('webrtc').directive('webrtcPreview', function (webrtc) {
+angular.module('webrtc').directive('webrtcLocalStream', function (webrtc) {
 	return function link($scope, $element, attrs) {
 		var video = $element[0];
 		if (video.tagName !== 'VIDEO') {
-			throw new Error('The webrtc-preview directive must be placed on a VideoElement');
+			throw new Error('The webrtc-local-stream directive must be placed on a VideoElement');
 		}
 		video.muted = true;
 		video.autoplay = true;
 		if (webrtc.localStream) {
-			console.dir(video);
 			video.src = URL.createObjectURL(webrtc.localStream);
 		}
 		$scope.$on('webrtcLocalStream', function (e, stream) {
