@@ -1,9 +1,10 @@
 var Rx = require('rx');
 /**
- * @extends IDisposable
+ * @implements Rx.Disposable
  */
 function Session (options) {
 	options = options || {};
+	this.isDisposed = false;
 	
 	if (options.id) {
 		this.id = options.id;
@@ -22,7 +23,11 @@ function Session (options) {
 };
 
 Session.prototype.dispose = function() {
-	// if (this.status.value === 'CALLING') 
+	if (this.isDisposed) {
+		return;
+	}
+	this.isDisposed = true;
+	this.peerConnection.close(); 
 	this.subscriptions.forEach(subscription => { subscription.dispose() });
 };
 

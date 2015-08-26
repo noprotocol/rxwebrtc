@@ -1,6 +1,5 @@
 {
   "name": "rxwebrtc",
-  "version": "0.0.1",
   "homepage": "https://github.com/noprotocol/rxwebrtc",
   "description": "RxWebRTC",
   "main": "build/webrtc.min.js",

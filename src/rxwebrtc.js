@@ -31,12 +31,24 @@ var rxwebrtc = {
 	 */
 	call: function (options) {
 		options = options || {};
-		options.target = options.target || 'UNKNOWN'; 
+
 		options.userMedia || rxwebrtc.defaults.userMedia
 		options.peerConnection = options.peerConnection ||  rxwebrtc.defaults.peerConnection;
 		var session = new Session(options);
+		console.log(session.peerConnection);
+		var close = Rx.Observable.fromEvent(session.peerConnection, 'iceconnectionstatechange')
+		.pluck('target').pluck('iceConnectionState')
+		.subscribe(function (connectionState) {
+			if (connectionState === 'completed') {
+				session.status.onNext('CONNECTED');
+			} else if (connectionState === 'disconnected'){
+				session.status.onNext('DISCONNECTED');
+				session.status.onCompleted();
+			}
+		});
+		session.subscriptions.push(close);
 		session.status.onNext('USER_MEDIA');
-		var subscription = rxwebrtc.getUserMedia(options.userMedia || rxwebrtc.defaults.userMedia).flatMap(function (stream) {
+		var call = rxwebrtc.getUserMedia(options.userMedia || rxwebrtc.defaults.userMedia).flatMap(function (stream) {
 			session.peerConnection.addStream(stream);
 			session.localStream.onNext(stream);
 			session.status.onNext('LOCAL_STREAM');
@@ -50,7 +62,7 @@ var rxwebrtc = {
 			session.status.onNext('ICE CANDIDATES: ' + iceCandidates.length);
 			rxwebrtc.output.onNext({
 				type: 'offer', 
-				target: options.target,
+				recipient: options.recipient || {},
 				session: session.id,
 				offer: session.offer,
 				iceCandidates: iceCandidates
@@ -75,16 +87,16 @@ var rxwebrtc = {
 		}).flatMap(function () {
 			return session.remoteStream.first();
 		}).subscribe(function (stream) {
-			session.status.onNext('CONNECTED');
-			console.log(stream);
+			session.status.onNext('CONNECTING');
+		}, function (error) {
+			session.status.onError(error);
 		});
-		session.subscriptions.push(subscription);
+		session.subscriptions.push(call);
 		return session;
 	},
 	
 	answer: function (options) {
 		options = options || {};
-		options.target = options.target || 'UNKNOWN';
 		options.userMedia || rxwebrtc.defaults.userMedia
 		options.peerConnection = options.peerConnection ||  rxwebrtc.defaults.peerConnection;
 		var session = new Session(options);
@@ -113,7 +125,7 @@ var rxwebrtc = {
 		}).subscribe(function (iceCandidates) {
 			rxwebrtc.output.onNext({
 				type: 'answer', 
-				target: options.target,
+				recipient: options.recipient || {},
 				session: session.id,
 				answer: session.answer,
 				iceCandidates: iceCandidates
