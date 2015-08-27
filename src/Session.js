@@ -19,7 +19,17 @@ function Session (options) {
 	this.messages = rxwebrtc.input.filter(message => {
 		return message.session === this.id;
 	});
-	this.subscriptions = [this.status, this.localStream];
+	var connectionState = Rx.Observable.fromEvent(this.peerConnection, 'iceconnectionstatechange')
+		.pluck('target', 'iceConnectionState')
+		.subscribe( connectionState => {
+			if (connectionState === 'completed') {
+				this.status.onNext('CONNECTED');
+			} else if (connectionState === 'disconnected'){
+				this.status.onNext('DISCONNECTED');
+				this.status.onCompleted();
+			}
+		}); 
+	this.subscriptions = [this.status, this.localStream, connectionState];
 };
 
 Session.prototype.dispose = function() {
