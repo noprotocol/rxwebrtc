@@ -4,6 +4,8 @@ var Rx = require('rx');
  */
 function Session (options) {
 	options = options || {};
+	this.sender = options.sender || {};
+	this.recipient = options.recipient || {};
 	this.isDisposed = false;
 	
 	if (options.id) {

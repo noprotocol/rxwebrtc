@@ -50,7 +50,8 @@ var rxwebrtc = {
 			session.status.onNext('ICE CANDIDATES: ' + iceCandidates.length);
 			rxwebrtc.output.onNext({
 				type: 'offer', 
-				recipient: options.recipient || {},
+				sender: session.sender,
+				recipient: session.recipient,
 				session: session.id,
 				offer: session.offer,
 				iceCandidates: iceCandidates
@@ -67,6 +68,12 @@ var rxwebrtc = {
 				return message.type === 'answer'
 			}).first();
 		}).flatMap(function (message) {
+			if (message.sender) {
+				rxwebrtc.merge(session.recipient, message.sender); 
+			}
+			if (message.recipient) {
+				rxwebrtc.merge(session.sender, message.recipient); 
+			}
 			session.status.onNext('ANSWERED');
 			message.iceCandidates.forEach(function (ice) {
 				rxwebrtc.addIceCandidate(session.peerConnection, ice).subscribe();
@@ -108,7 +115,8 @@ var rxwebrtc = {
 		}).subscribe(function (iceCandidates) {
 			rxwebrtc.output.onNext({
 				type: 'answer',
-				recipient: options.recipient || {},
+				sender: session.sender,
+				recipient: session.recipient,
 				session: session.id,
 				answer: session.answer,
 				iceCandidates: iceCandidates
@@ -174,7 +182,16 @@ var rxwebrtc = {
 			});
 		});
 	},
-	getUserMedia: getUserMedia
+	getUserMedia: getUserMedia,
+	merge: function (target, source) {
+		source = source || {};
+		for (var key in source) {
+			if (source.hasOwnProperty(key)) {
+				target[key] = source[key];
+			}
+		}
+		return target;
+	}
 };
 
 window.rxwebrtc = rxwebrtc;
