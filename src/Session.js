@@ -22,7 +22,11 @@ function Session (options) {
 		return message.session === this.id;
 	});
 	var connectionState = Rx.Observable.fromEvent(this.peerConnection, 'iceconnectionstatechange')
-		.pluck('target', 'iceConnectionState')
+		.map(function (e) {
+			if (e.target) {
+				return e.target.iceConnection  
+			}
+		})
 		.subscribe( connectionState => {
 			if (connectionState === 'completed') {
 				this.status.onNext('CONNECTED');
