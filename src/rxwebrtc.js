@@ -113,6 +113,7 @@ var rxwebrtc = {
 			session.peerConnection.setLocalDescription(answer); // Triggers ICE gathering
 			return rxwebrtc.gatherIceCandidates(session.peerConnection);
 		}).subscribe(function (iceCandidates) {
+			session.status.onNext('ICE CANDIDATES: ' + iceCandidates.length);
 			rxwebrtc.output.onNext({
 				type: 'answer',
 				sender: session.sender,

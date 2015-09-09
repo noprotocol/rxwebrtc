@@ -28,8 +28,10 @@ function Session (options) {
 			}
 		})
 		.subscribe( connectionState => {
-			if (connectionState === 'completed') {
-				this.status.onNext('CONNECTED');
+			if (connectionState === 'connected' || connectionState === 'completed') {
+				if (this.status.value !== 'CONNECTED') {
+					this.status.onNext('CONNECTED');
+				}
 			} else if (connectionState === 'disconnected'){
 				this.status.onNext('DISCONNECTED');
 				this.status.onCompleted();
