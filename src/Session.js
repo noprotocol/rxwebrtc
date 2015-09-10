@@ -45,7 +45,13 @@ Session.prototype.dispose = function() {
 		return;
 	}
 	this.isDisposed = true;
-	this.peerConnection.close(); 
+	this.peerConnection.close();
+	var mediaStream = this.localStream.value;
+	if (mediaStream) {
+		mediaStream.getTracks().map(function (track) {
+			track.stop();
+		});
+	}
 	this.subscriptions.forEach(subscription => { subscription.dispose() });
 };
 
