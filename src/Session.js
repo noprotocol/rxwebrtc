@@ -21,8 +21,28 @@ function Session (options) {
 	this.messages = rxwebrtc.input.filter(message => {
 		return message.session === this.id;
 	});
+	window.peerConnection = this.peerConnection;
+	var trickleIce = Rx.Observable.fromEvent(this.peerConnection, 'icecandidate').filter(function (e) {
+		return e.candidate;
+	}).subscribe( e => {
+		rxwebrtc.output.onNext({
+			type: 'ice',
+			session: this.id,
+			candidate: e.candidate,
+			sender: this.sender,
+			recipient: this.recipient
+		});
+	});
+	this.iceCandidates = this.messages.filter(function (message) {
+		return message.type === 'ice';
+	}).pluck('candidate');
+	Rx.Observable.fromEvent(this.peerConnection, 'signalingstatechange').subscribe(e => { console.log('signalingstatechange', this.peerConnection.signalingState)})
+	Rx.Observable.fromEvent(this.peerConnection, 'addstream').subscribe(function (e) { console.log('onaddstream', e)})
+	Rx.Observable.fromEvent(this.peerConnection, 'iceconnectionstatechange').subscribe(e => { console.log('signalingstatechange', this.peerConnection.iceConnectionState)})
+	
 	var connectionState = Rx.Observable.fromEvent(this.peerConnection, 'iceconnectionstatechange')
 		.map(function (e) {
+			console.log('iceconnectionstatechange', e)
 			if (e.target) {
 				return e.target.iceConnectionState  
 			}
@@ -37,7 +57,7 @@ function Session (options) {
 				this.status.onCompleted();
 			}
 		}); 
-	this.subscriptions = [this.status, this.localStream, connectionState];
+	this.subscriptions = [this.status, this.localStream, trickleIce, connectionState];
 };
 
 Session.prototype.dispose = function() {
